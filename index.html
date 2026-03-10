@@ -83,7 +83,7 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:cen
 
 /* SERVICES */
 #services{padding:70px 40px 100px;background-color:var(--bg);background-image:radial-gradient(circle,rgba(255,255,255,0.065) 2px,transparent 2px);background-size:40px 40px;}
-.section-heading{font-size:14px;color:rgba(208,208,208,0.38);margin-bottom:28px;}
+.section-heading{font-size:clamp(18px,3vw,22px);font-weight:600;color:rgba(208,208,208,0.45);margin-bottom:28px;}
 .services-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:calc(25vw - 30px) calc(25vw - 30px) calc(25vw - 30px);gap:12px;width:100%;}
 .s-card{border-radius:var(--r);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;transition:transform .25s;}
 .s-card:hover{transform:scale(1.015);}
@@ -133,6 +133,16 @@ nav{position:fixed;top:0;left:0;right:0;z-index:200;display:flex;align-items:cen
 .proj-btn:hover{background:rgba(255,255,255,0.14);}
 .proj-btn:disabled{opacity:0.3;cursor:default;}
 .proj-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.5;}
+
+/* BLOG */
+#blog{padding:70px 40px 90px;background-color:var(--bg);background-image:radial-gradient(circle,rgba(255,255,255,0.065) 2px,transparent 2px);background-size:40px 40px;}
+.blog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:24px;}
+.blog-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:var(--r);padding:28px;transition:border-color .25s,transform .25s;cursor:default;}
+.blog-card:hover{border-color:rgba(255,255,255,0.15);transform:translateY(-3px);}
+.blog-date{font-size:11px;color:rgba(208,208,208,0.28);letter-spacing:0.05em;text-transform:uppercase;margin-bottom:12px;}
+.blog-title{font-size:clamp(14px,1.6vw,17px);font-weight:600;color:rgba(208,208,208,0.75);margin-bottom:12px;line-height:1.4;}
+.blog-excerpt{font-size:clamp(12px,1.2vw,13px);color:rgba(208,208,208,0.38);line-height:1.75;}
+.blog-tag{display:inline-block;margin-top:14px;font-size:10px;letter-spacing:0.06em;text-transform:uppercase;color:rgba(208,208,208,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:4px;padding:4px 10px;}
 
 /* CONTACT */
 #contact{padding:60px 40px 0;background-color:var(--bg);background-image:radial-gradient(circle,rgba(255,255,255,0.065) 2px,transparent 2px);background-size:40px 40px;}
@@ -277,6 +287,8 @@ textarea.a-inp{resize:vertical;min-height:60px;}
 #toast.show{opacity:1;transform:translateY(0);}
 .fb-loading{display:flex;align-items:center;justify-content:center;min-height:80px;color:rgba(208,208,208,0.3);font-size:13px;gap:10px;}
 .fb-loading::before{content:"";width:16px;height:16px;border:2px solid rgba(208,208,208,0.2);border-top-color:rgba(208,208,208,0.6);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;}
+#blog-modal{display:none;}
+#blog-modal.open{display:flex;}
 @keyframes spin{to{transform:rotate(360deg);}}
 .reveal{opacity:0;transform:translateY(22px);transition:opacity .65s ease,transform .65s ease;}
 .reveal.in{opacity:1;transform:translateY(0);}
@@ -358,6 +370,24 @@ textarea.a-inp{resize:vertical;min-height:60px;}
 </div>
 
 <!-- ADMIN PANEL -->
+<!-- BLOG MODAL -->
+<div id="blog-modal" style="display:none;position:fixed;inset:0;z-index:1100;background:rgba(0,0,0,0.75);align-items:center;justify-content:center;">
+  <div style="background:#161616;border:1px solid rgba(255,255,255,0.1);border-radius:14px;padding:32px;width:min(520px,92vw);position:relative;">
+    <button onclick="closeBlogModal()" style="position:absolute;top:16px;right:16px;background:none;border:none;color:rgba(208,208,208,0.4);font-size:20px;cursor:pointer;">✕</button>
+    <div style="font-size:15px;font-weight:600;color:rgba(208,208,208,0.7);margin-bottom:20px;">Blog Post</div>
+    <label style="font-size:11px;color:rgba(208,208,208,0.4);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;">Title *</label>
+    <input class="a-inp" id="bm-title" placeholder="Post title…" style="margin:0 0 14px 0;">
+    <label style="font-size:11px;color:rgba(208,208,208,0.4);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;">Excerpt / Body</label>
+    <textarea class="a-inp" id="bm-excerpt" rows="5" placeholder="Write a short description or full post content…" style="margin:0 0 14px 0;resize:vertical;line-height:1.7;"></textarea>
+    <label style="font-size:11px;color:rgba(208,208,208,0.4);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;">Tag / Category</label>
+    <input class="a-inp" id="bm-tag" placeholder="e.g. Video Tips, SaaS, Behind the Scenes" style="margin:0 0 20px 0;">
+    <div style="display:flex;gap:10px;">
+      <button class="btn-save" onclick="saveBlogPost()" style="flex:1;">Publish</button>
+      <button class="btn-del" onclick="closeBlogModal()" style="padding:10px 20px;">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div id="admin-panel">
   <div class="admin-nav">
     <div class="admin-nav-left">
@@ -381,6 +411,29 @@ textarea.a-inp{resize:vertical;min-height:60px;}
   <!-- TAB: CONTENT -->
   <div id="tab-content" class="admin-tab-content active">
     <div class="admin-body">
+      <!-- About Us Editor -->
+      <div class="admin-section" id="admin-about-section">
+        <div class="admin-section-title">About Us</div>
+        <div class="admin-section-sub">Edit the About Us text shown on the site. Supports plain text — keep it concise for best SEO.</div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:11px;color:rgba(208,208,208,0.4);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;">Section Label</label>
+          <input class="a-inp" id="about-label-inp" placeholder="About Us" style="margin:0 0 12px 0;">
+        </div>
+        <div>
+          <label style="font-size:11px;color:rgba(208,208,208,0.4);display:block;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.05em;">Body Text</label>
+          <textarea class="a-inp" id="about-body-inp" rows="5" placeholder="Write your about us text…" style="margin:0;resize:vertical;line-height:1.7;"></textarea>
+        </div>
+        <button class="btn-save" style="margin-top:12px;" onclick="saveAbout()">Save Changes</button>
+      </div>
+      <!-- Blogs -->
+      <div class="admin-section" id="admin-blog-section">
+        <div class="admin-section-title">Blog Posts</div>
+        <div class="admin-section-sub">Add blog posts — they appear in the Blog section on your site. Great for SEO.</div>
+        <div class="admin-grid" id="admin-blog-grid"><div class="fb-loading">Loading…</div></div>
+        <button class="btn-add" style="margin-top:14px;" onclick="addBlogPost()">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg> Add Blog Post
+        </button>
+      </div>
       <!-- Profile -->
       <div class="admin-section" id="admin-prof-section">
         <div class="admin-section-title">Profile Image</div>
@@ -517,6 +570,7 @@ textarea.a-inp{resize:vertical;min-height:60px;}
     <li><a href="#about">About Us</a></li>
     <li><a href="#services">Services</a></li>
     <li><a href="#projects">Project</a></li>
+    <li id="nav-blog-li" style="display:none;"><a href="#blog">Blog</a></li>
     <li><a href="#contact">Contact</a></li>
     <li><a href="#" onclick="openLogin();return false;" style="color:rgba(208,208,208,0.22);">Admin</a></li>
   </ul>
@@ -534,8 +588,8 @@ textarea.a-inp{resize:vertical;min-height:60px;}
 <section id="about" data-section="about">
   <div class="about-inner reveal">
     <div class="about-block">
-      <div class="about-label">About Us</div>
-      <p class="about-body">SaaS Motion by Sahal is a creative studio focused on helping SaaS companies explain their products through video. We believe great software deserves clear communication. By combining storytelling, motion graphics, and product understanding, we help SaaS platforms transform complex ideas into engaging visual experiences.</p>
+      <div class="about-label" id="about-label-text">About Us</div>
+      <p class="about-body" id="about-body-text">SaaS Motion by Sahal is a creative studio focused on helping SaaS companies explain their products through video. We believe great software deserves clear communication. By combining storytelling, motion graphics, and product understanding, we help SaaS platforms transform complex ideas into engaging visual experiences.</p>
     </div>
   </div>
 </section>
@@ -543,67 +597,79 @@ textarea.a-inp{resize:vertical;min-height:60px;}
 <section id="services" data-section="services">
   <div class="section-heading reveal">Video Editing Services</div>
   <div class="services-grid reveal">
-    <div class="s-card s-light sc1" id="svc-REELS">
-      <video id="vid-REELS" muted loop playsinline autoplay></video>
-      <div class="vid-overlay"><div class="vid-play-ico"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
-      <button class="s-mute-btn" onclick="toggleMuteSvc('REELS',this)" title="Toggle sound"><svg id="mico-REELS" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg></button>
+
+    <!-- sc1: REELS — static label card -->
+    <div class="s-card s-light sc1">
       <div class="s-label">REELS</div>
     </div>
+
+    <!-- sc2: SLOT1 — editable video -->
     <div class="s-card s-checker sc2" id="svc-SLOT1">
       <video id="vid-SLOT1" muted loop playsinline autoplay></video>
       <div class="vid-overlay"><div class="vid-play-ico"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
-      <button class="s-mute-btn" onclick="toggleMuteSvc('SLOT1',this)" title="Toggle sound"><svg id="mico-SLOT1" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg></button>
+      <button class="s-mute-btn" onclick="toggleMuteSvc('SLOT1',this)"><svg id="mico-SLOT1" viewBox="0 0 24 24" fill="white"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" fill="none" stroke="white" stroke-width="2"/></svg></button>
     </div>
-    <div class="s-card s-light sc3" id="svc-LOGO">
-      <video id="vid-LOGO" muted loop playsinline autoplay></video>
-      <div class="vid-overlay"><div class="vid-play-ico"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
-      <button class="s-mute-btn" onclick="toggleMuteSvc('LOGO',this)" title="Toggle sound"><svg id="mico-LOGO" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg></button>
+
+    <!-- sc3: LOGO — static label card -->
+    <div class="s-card s-light sc3">
       <div class="s-label">LOGO</div>
     </div>
+
+    <!-- sc4: SLOT2 — editable video -->
     <div class="s-card s-checker sc4" id="svc-SLOT2">
       <video id="vid-SLOT2" muted loop playsinline autoplay></video>
       <div class="vid-overlay"><div class="vid-play-ico"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
-      <button class="s-mute-btn" onclick="toggleMuteSvc('SLOT2',this)" title="Toggle sound"><svg id="mico-SLOT2" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg></button>
+      <button class="s-mute-btn" onclick="toggleMuteSvc('SLOT2',this)"><svg id="mico-SLOT2" viewBox="0 0 24 24" fill="white"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" fill="none" stroke="white" stroke-width="2"/></svg></button>
     </div>
+
+    <!-- sc5: SLOT3 — editable video -->
     <div class="s-card s-checker sc5" id="svc-SLOT3">
       <video id="vid-SLOT3" muted loop playsinline autoplay></video>
       <div class="vid-overlay"><div class="vid-play-ico"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
-      <button class="s-mute-btn" onclick="toggleMuteSvc('SLOT3',this)" title="Toggle sound"><svg id="mico-SLOT3" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg></button>
+      <button class="s-mute-btn" onclick="toggleMuteSvc('SLOT3',this)"><svg id="mico-SLOT3" viewBox="0 0 24 24" fill="white"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" fill="none" stroke="white" stroke-width="2"/></svg></button>
     </div>
-    <div class="s-card s-light sc6" id="svc-TALKING_HEAD">
-      <video id="vid-TALKING_HEAD" muted loop playsinline autoplay></video>
-      <div class="vid-overlay"><div class="vid-play-ico"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
-      <button class="s-mute-btn" onclick="toggleMuteSvc('TALKING_HEAD',this)" title="Toggle sound"><svg id="mico-TALKING_HEAD" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg></button>
+
+    <!-- sc6: TALKING HEAD — static label card -->
+    <div class="s-card s-light sc6">
       <div class="s-label">TALKING<br>HEAD</div>
     </div>
+
+    <!-- sc7: SLOT4 — editable video -->
     <div class="s-card s-checker sc7" id="svc-SLOT4">
       <video id="vid-SLOT4" muted loop playsinline autoplay></video>
       <div class="vid-overlay"><div class="vid-play-ico"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
-      <button class="s-mute-btn" onclick="toggleMuteSvc('SLOT4',this)" title="Toggle sound"><svg id="mico-SLOT4" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg></button>
+      <button class="s-mute-btn" onclick="toggleMuteSvc('SLOT4',this)"><svg id="mico-SLOT4" viewBox="0 0 24 24" fill="white"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" fill="none" stroke="white" stroke-width="2"/></svg></button>
     </div>
+
+    <!-- sc8: SLOT5 — editable video -->
     <div class="s-card s-checker sc8" id="svc-SLOT5">
       <video id="vid-SLOT5" muted loop playsinline autoplay></video>
       <div class="vid-overlay"><div class="vid-play-ico"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
-      <button class="s-mute-btn" onclick="toggleMuteSvc('SLOT5',this)" title="Toggle sound"><svg id="mico-SLOT5" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg></button>
+      <button class="s-mute-btn" onclick="toggleMuteSvc('SLOT5',this)"><svg id="mico-SLOT5" viewBox="0 0 24 24" fill="white"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07" fill="none" stroke="white" stroke-width="2"/></svg></button>
     </div>
-    <div class="s-card s-light sc9" id="svc-PRODUCT_VIDEOS">
-      <video id="vid-PRODUCT_VIDEOS" muted loop playsinline autoplay></video>
-      <div class="vid-overlay"><div class="vid-play-ico"><svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg></div></div>
-      <button class="s-mute-btn" onclick="toggleMuteSvc('PRODUCT_VIDEOS',this)" title="Toggle sound"><svg id="mico-PRODUCT_VIDEOS" viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M19.07 4.93a10 10 0 010 14.14M15.54 8.46a5 5 0 010 7.07"/></svg></button>
+
+    <!-- sc9: PRODUCT VIDEOS — static label card -->
+    <div class="s-card s-light sc9">
       <div class="s-label">PRODUCT<br>VIDEOS</div>
     </div>
+
   </div>
 </section>
 
 <section id="projects" data-section="projects">
   <div class="projects-heading reveal">Projects</div>
   <div class="projects-grid-wrapper reveal">
-    <div id="projects-grid" class="projects-grid"><div class="fb-loading" style="min-width:100%;">Loading projects…</div></div>
+    <div id="projects-grid" class="projects-grid"></div>
   </div>
   <div class="proj-nav reveal">
     <button class="proj-btn" id="proj-prev"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
     <button class="proj-btn" id="proj-next"><svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg></button>
   </div>
+</section>
+
+<section id="blog" data-section="blog" style="display:none;">
+  <div class="projects-heading reveal" id="blog-section-heading">Blog</div>
+  <div class="blog-grid reveal" id="blog-grid"></div>
 </section>
 
 <section id="contact" data-section="contact">
@@ -728,6 +794,7 @@ function permSummary(p){
 ───────────────────────────────────────── */
 async function writeLog(action, detail){
   try {
+    await waitForFB();
     await window._fs.addDoc(window._fs.collection(window._db,"auditLog"),{
       who: currentUser ? currentUser.name : "Unknown",
       action: action,
@@ -741,6 +808,7 @@ async function loadAuditLog(){
   var el = document.getElementById("audit-log-list");
   el.innerHTML = '<div class="fb-loading">Loading…</div>';
   try {
+    await waitForFB();
     var q    = window._fs.query(window._fs.collection(window._db,"auditLog"), window._fs.orderBy("ts","desc"), window._fs.limit(60));
     var snap = await window._fs.getDocs(q);
     if(snap.empty){ el.innerHTML='<div style="color:rgba(208,208,208,0.3);font-size:13px;padding:20px 0;">No activity yet.</div>'; return; }
@@ -752,7 +820,7 @@ async function loadAuditLog(){
       row.innerHTML = '<div class="log-dot '+dot+'"></div><div class="log-text"><strong>'+data.who+'</strong> '+data.action+' — '+data.detail+'</div><div class="log-time">'+fmtTime(data.ts)+'</div>';
       el.appendChild(row);
     });
-  } catch(e){ el.innerHTML='<div style="color:#ff6b6b;font-size:13px;">Failed to load log. (Missing index for auditLog ts — create it in Firebase Console → Firestore → Indexes)</div>'; }
+  } catch(e){ el.innerHTML='<div style="color:#ff6b6b;font-size:13px;">Failed to load log. Create index: Firebase Console → Firestore → Indexes → collection: auditLog, field: ts Descending.</div>'; }
 }
 
 /* ─────────────────────────────────────────
@@ -762,6 +830,7 @@ async function loadTeamMembers(){
   if(!currentUser || currentUser.username !== OWNER.username) return;
   var el = document.getElementById("team-list"); el.innerHTML='<div class="fb-loading">Loading…</div>';
   try {
+    await waitForFB();
     var snap = await window._fs.getDocs(window._fs.collection(window._db,"team"));
     el.innerHTML="";
 
@@ -832,6 +901,7 @@ window.savePerms = async function(docId){
     auditLog:  document.getElementById('ep-auditLog').checked,
     team:false
   };
+  await waitForFB();
   await window._fs.setDoc(window._fs.doc(window._db,"team",docId),{permissions:perms},{merge:true});
   await writeLog("edit","Updated permissions for team member");
   await loadTeamMembers();
@@ -854,6 +924,7 @@ window.addTeamMember = async function(){
     team:false
   };
   try {
+    await waitForFB();
     await window._fs.addDoc(window._fs.collection(window._db,"team"),{name,role,username:user,password:pass,permissions:perms});
     await writeLog("add","Added team member: "+name+" (@"+user+") with role: "+role);
     ['nm-name','nm-role','nm-user','nm-pass'].forEach(function(id){ var el=document.getElementById(id); if(el) el.value=""; });
@@ -867,6 +938,7 @@ window.addTeamMember = async function(){
 window.deleteTeamMember = async function(id, name){
   if(!confirm("Remove "+name+" from the team?")) return;
   try {
+    await waitForFB();
     await window._fs.deleteDoc(window._fs.doc(window._db,"team",id));
     await writeLog("delete","Removed team member: "+name);
     await loadTeamMembers();
@@ -874,22 +946,54 @@ window.deleteTeamMember = async function(id, name){
   } catch(e){ toast("Error: "+e.message); }
 };
 
+
+/* ─────────────────────────────────────────
+   WAIT FOR FIREBASE
+   The module script is async — window._db/_fs
+   may not exist yet when the classic script runs.
+   Every Firebase call must await this first.
+───────────────────────────────────────── */
+function waitForFB(){
+  return new Promise(function(resolve){
+    if(window._fbReady && window._db){ resolve(); return; }
+    window.addEventListener("fbReady",function(){ resolve(); },{once:true});
+  });
+}
+
+/* Also patch writeLog to wait */
+var _origWriteLog = null; // defined later — patched after declaration
+
 /* ─────────────────────────────────────────
    FIREBASE DATA HELPERS
 ───────────────────────────────────────── */
 async function getSvcVideos(){
+  await waitForFB();
   try{ var s=await window._fs.getDoc(window._fs.doc(window._db,"settings","svcVideos")); return s.exists()?s.data():{}; }catch(e){ return {}; }
 }
-async function saveSvcVideos(data){ await window._fs.setDoc(window._fs.doc(window._db,"settings","svcVideos"),data); }
+async function saveSvcVideos(data){
+  await waitForFB();
+  await window._fs.setDoc(window._fs.doc(window._db,"settings","svcVideos"),data);
+}
 async function getProfileSrc(){
+  await waitForFB();
   try{ var s=await window._fs.getDoc(window._fs.doc(window._db,"settings","profile")); return s.exists()?(s.data().src||""):""; }catch(e){ return ""; }
 }
-async function saveProfileSrc(url){ await window._fs.setDoc(window._fs.doc(window._db,"settings","profile"),{src:url}); }
+async function saveProfileSrc(url){
+  await waitForFB();
+  await window._fs.setDoc(window._fs.doc(window._db,"settings","profile"),{src:url});
+}
+
 
 var SVC_SLOTS=[
-  {id:"REELS",label:"REELS"},{id:"SLOT1",label:"Slot 2"},{id:"LOGO",label:"LOGO"},{id:"SLOT2",label:"Slot 4"},
-  {id:"SLOT3",label:"Slot 5"},{id:"TALKING_HEAD",label:"TALKING HEAD"},{id:"SLOT4",label:"Slot 7"},
-  {id:"SLOT5",label:"Slot 8"},{id:"PRODUCT_VIDEOS",label:"PRODUCT VIDEOS"}
+  {id:"REELS",        label:"REELS",          static:true},
+  {id:"SLOT1",        label:"Slot 2",          static:false},
+  {id:"LOGO",         label:"LOGO",            static:true},
+  {id:"SLOT2",        label:"Slot 4",          static:false},
+  {id:"SLOT3",        label:"Slot 5",          static:false},
+  {id:"TALKING_HEAD", label:"TALKING HEAD",    static:true},
+  {id:"SLOT4",        label:"Slot 7",          static:false},
+  {id:"SLOT5",        label:"Slot 8",          static:false},
+  {id:"PRODUCT_VIDEOS",label:"PRODUCT VIDEOS", static:true}
 ];
 var DEFAULT_PROJECTS=[
   {id:"proj_1",order:0,tag:"Product Video",colorClass:"v1",title:"Vynox Media Product Explainer Video",desc:"A product explainer designed to simplify Vynox Media's platform and communicate its value in seconds.",videoSrc:""},
@@ -898,9 +1002,8 @@ var DEFAULT_PROJECTS=[
 ];
 
 async function getProjects(){
+  await waitForFB();
   try{
-    /* No orderBy here — avoids Firestore composite index requirement.
-       Sort client-side instead, which is instant. */
     var s=await window._fs.getDocs(window._fs.collection(window._db,"projects"));
     if(s.empty) return DEFAULT_PROJECTS;
     return s.docs.map(function(d){ return Object.assign({id:d.id},d.data()); })
@@ -1099,29 +1202,30 @@ async function applySvcVideos(){
 
 /* ─────────────────────────────────────────
    RENDER PROJECTS (public)
+   _buildProjectsGrid() is fully synchronous — zero Firebase, instant paint.
+   renderProjects() paints defaults immediately then silently swaps real data.
 ───────────────────────────────────────── */
 var projectPage=0, PAGE_SIZE=3;
-async function renderProjects(){
-  var projects = await getProjects();
-  var psrc     = await getProfileSrc();
-  var grid     = document.getElementById("projects-grid");
-  projectPage  = 0;
-  grid.style.transform="translateX(0)";
-  grid.innerHTML="";
+var _cachedProfileSrc = "";  // filled after Firebase ready — no blocking
+
+function _buildProjectsGrid(projects, psrc){
+  var grid = document.getElementById("projects-grid");
+  projectPage = 0;
+  grid.style.transform = "translateX(0)";
+  grid.innerHTML = "";
 
   projects.forEach(function(p){
-    var card=document.createElement("div"); card.className="p-card";
-    var thumb=document.createElement("div"); thumb.className="p-thumb "+p.colorClass;
+    var card = document.createElement("div"); card.className="p-card";
+    var thumb = document.createElement("div"); thumb.className="p-thumb "+(p.colorClass||"v1");
 
-    var vid=null;
+    var vid = null;
     if(p.videoSrc){
-      vid=document.createElement("video");
+      vid = document.createElement("video");
       vid.src=p.videoSrc; vid.muted=true; vid.loop=true; vid.autoplay=true;
       vid.setAttribute("playsinline","");
       vid.style.cssText="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;";
       thumb.appendChild(vid);
-      /* track play on unmute */
-      (function(v,pid){ v.addEventListener("play",function(){trackVideoPlay("proj-"+pid);},{once:true}); })(vid,p.id);
+      (function(v,pid){ v.addEventListener("play",function(){ trackVideoPlay("proj-"+pid); },{once:true}); })(vid,p.id);
     }
 
     var ov=document.createElement("div"); ov.className="p-thumb-overlay";
@@ -1129,7 +1233,6 @@ async function renderProjects(){
     pp.innerHTML='<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
     ov.appendChild(pp); thumb.appendChild(ov);
 
-    /* mute button */
     if(vid){
       var mb=document.createElement("button"); mb.className="p-mute-btn";
       mb.innerHTML='<svg viewBox="0 0 24 24">'+MUTED_ICON+'</svg>';
@@ -1138,34 +1241,67 @@ async function renderProjects(){
       thumb.appendChild(mb);
     }
 
-    var tg=document.createElement("div"); tg.className="p-tag"; tg.textContent=p.tag;
+    var tg=document.createElement("div"); tg.className="p-tag"; tg.textContent=p.tag||"";
     thumb.appendChild(tg); card.appendChild(thumb);
 
     var meta=document.createElement("div"); meta.className="p-meta";
     var av=document.createElement("div"); av.className="p-avatar";
-    if(psrc){ var ai=document.createElement("img"); ai.src=psrc; ai.alt="Profile"; av.appendChild(ai); }
+    if(psrc){ var ai=document.createElement("img"); ai.src=psrc; ai.alt=""; av.appendChild(ai); }
     else { av.innerHTML='<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'; }
     var br=document.createElement("span"); br.className="p-brand"; br.textContent="SaaS.motions";
     meta.appendChild(av); meta.appendChild(br); card.appendChild(meta);
 
-    var ti=document.createElement("div"); ti.className="p-title"; ti.textContent=p.title;
-    var de=document.createElement("div"); de.className="p-desc";  de.textContent=p.desc;
+    var ti=document.createElement("div"); ti.className="p-title"; ti.textContent=p.title||"";
+    var de=document.createElement("div"); de.className="p-desc";  de.textContent=p.desc||"";
     card.appendChild(ti); card.appendChild(de);
     grid.appendChild(card);
   });
-  setTimeout(updateProjectScroll, 50);
+
+  updateProjectScroll(projects);
 }
 
-function updateProjectScroll(){
+/* Public entry — call with no args for normal page load */
+function renderProjects(projects){
+  /* Step 1: paint synchronously RIGHT NOW with whatever we have */
+  _buildProjectsGrid(projects || DEFAULT_PROJECTS, _cachedProfileSrc);
+
+  /* Step 2: if no data was passed, fetch from Firebase in background */
+  if(!projects){
+    waitForFB().then(function(){
+      return Promise.all([
+        window._fs.getDoc(window._fs.doc(window._db,"settings","profile"))
+          .then(function(s){ return s.exists()?(s.data().src||""):""; })
+          .catch(function(){ return ""; }),
+        window._fs.getDocs(window._fs.collection(window._db,"projects"))
+          .then(function(s){
+            if(s.empty) return null;
+            return s.docs.map(function(d){ return Object.assign({id:d.id},d.data()); })
+              .sort(function(a,b){ return (a.order||0)-(b.order||0); });
+          }).catch(function(){ return null; })
+      ]);
+    }).then(function(results){
+      if(!results) return;
+      _cachedProfileSrc = results[0] || "";
+      /* Silent repaint with real data — no flash, no spinner */
+      _buildProjectsGrid(results[1] || DEFAULT_PROJECTS, _cachedProfileSrc);
+    }).catch(function(){});
+  }
+}
+
+var _lastProjectCount = DEFAULT_PROJECTS.length; // track without async
+
+function updateProjectScroll(projects){
+  var count = projects ? projects.length : _lastProjectCount;
+  if(projects) _lastProjectCount = count;
   var grid=document.getElementById("projects-grid");
   var card=grid.querySelector(".p-card"); if(!card) return;
   var cw=card.offsetWidth;
   grid.style.transform="translateX(-"+(projectPage*PAGE_SIZE*(cw+28))+"px)";
   document.getElementById("proj-prev").disabled=(projectPage===0);
-  getProjects().then(function(p){ document.getElementById("proj-next").disabled=((projectPage+1)*PAGE_SIZE>=p.length); });
+  document.getElementById("proj-next").disabled=((projectPage+1)*PAGE_SIZE>=count);
 }
 document.getElementById("proj-prev").onclick=function(){ if(projectPage>0){projectPage--;updateProjectScroll();} };
-document.getElementById("proj-next").onclick=function(){ getProjects().then(function(p){ if((projectPage+1)*PAGE_SIZE<p.length){projectPage++;updateProjectScroll();} }); };
+document.getElementById("proj-next").onclick=function(){ if((projectPage+1)*PAGE_SIZE<_lastProjectCount){projectPage++;updateProjectScroll();} };
 
 /* ─────────────────────────────────────────
    ADMIN — PROFILE
@@ -1181,9 +1317,10 @@ window.handleProfileFile=async function(inp){
   var file=inp.files[0]; if(!file) return;
   var url=await uploadWithProgress("profile/avatar_"+Date.now(), file, "profile-upbar-fill", "profile-upbar");
   await saveProfileSrc(url);
+  _cachedProfileSrc = url;
   document.getElementById("profile-preview").innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;">';
   var i=document.getElementById("profile-url-inp"); if(i) i.value=url;
-  await renderProjects();
+  getProjects().then(function(p){ _buildProjectsGrid(p, _cachedProfileSrc); });
   await writeLog("edit","Updated profile image");
   toast("Profile saved!");
 };
@@ -1191,11 +1328,173 @@ window.saveProfileUrl=async function(){
   var url=(document.getElementById("profile-url-inp")||{}).value||""; url=url.trim();
   if(!url){ toast("Paste a URL first"); return; }
   await saveProfileSrc(url);
+  _cachedProfileSrc = url;
   document.getElementById("profile-preview").innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;">';
-  await renderProjects();
+  getProjects().then(function(p){ _buildProjectsGrid(p, _cachedProfileSrc); });
   await writeLog("edit","Updated profile image (URL)");
   toast("Profile saved!");
 };
+
+/* ─────────────────────────────────────────
+   ADMIN — ABOUT US
+───────────────────────────────────────── */
+async function initAboutAdmin(){
+  try {
+    await waitForFB();
+    var s = await window._fs.getDoc(window._fs.doc(window._db,"settings","about"));
+    if(s.exists()){
+      var d = s.data();
+      var li = document.getElementById("about-label-inp"); if(li) li.value = d.label||"About Us";
+      var bi = document.getElementById("about-body-inp");  if(bi) bi.value = d.body||"";
+      /* also update live site text */
+      var lt = document.getElementById("about-label-text"); if(lt && d.label) lt.textContent = d.label;
+      var bt = document.getElementById("about-body-text");  if(bt && d.body)  bt.textContent = d.body;
+    } else {
+      /* pre-fill with current hardcoded text */
+      var li2=document.getElementById("about-label-inp"); if(li2) li2.value="About Us";
+      var bi2=document.getElementById("about-body-inp"); if(bi2) bi2.value=document.getElementById("about-body-text").textContent;
+    }
+  } catch(e){}
+}
+
+window.saveAbout = async function(){
+  var label = (document.getElementById("about-label-inp").value||"").trim() || "About Us";
+  var body  = (document.getElementById("about-body-inp").value||"").trim();
+  if(!body){ toast("Body text is empty"); return; }
+  await waitForFB();
+  await window._fs.setDoc(window._fs.doc(window._db,"settings","about"), {label, body});
+  document.getElementById("about-label-text").textContent = label;
+  document.getElementById("about-body-text").textContent  = body;
+  await writeLog("edit","Updated About Us content");
+  toast("About Us saved!");
+};
+
+/* ─────────────────────────────────────────
+   ADMIN — BLOGS
+───────────────────────────────────────── */
+async function renderAdminBlog(){
+  var grid = document.getElementById("admin-blog-grid");
+  grid.innerHTML = '<div class="fb-loading">Loading…</div>';
+  await waitForFB();
+  try {
+    var snap = await window._fs.getDocs(window._fs.collection(window._db,"blogs"));
+    grid.innerHTML = "";
+    if(snap.empty){ grid.innerHTML='<div style="color:rgba(208,208,208,0.3);font-size:13px;padding:10px 0;">No blog posts yet. Click Add Blog Post to create one.</div>'; return; }
+    var posts = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); })
+      .sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+    posts.forEach(function(p){
+      var card = document.createElement("div"); card.className="admin-card";
+      card.style.cssText="padding:0;overflow:hidden;";
+      card.innerHTML=
+        '<div class="admin-pad" style="border-bottom:1px solid rgba(255,255,255,0.06);">'+
+          '<div class="admin-lbl" style="margin-bottom:6px;">'+escHtml(p.title||"Untitled")+'</div>'+
+          '<div style="font-size:12px;color:rgba(208,208,208,0.35);margin-bottom:10px;">'+escHtml(p.tag||"")+'  ·  '+(p.createdAt?new Date(p.createdAt).toLocaleDateString():"")+'</div>'+
+          '<div style="font-size:12px;color:rgba(208,208,208,0.45);line-height:1.6;margin-bottom:12px;">'+escHtml((p.excerpt||"").slice(0,120)+(p.excerpt&&p.excerpt.length>120?"…":""))+'</div>'+
+          '<div style="display:flex;gap:8px;">'+
+            '<button class="btn-save" style="padding:7px 14px;font-size:12px;" onclick="editBlogPost(\''+p.id+'\')">Edit</button>'+
+            '<button class="btn-del" style="padding:7px 14px;font-size:12px;" onclick="deleteBlogPost(\''+p.id+'\',\''+escHtml(p.title||"this post")+'\')">Delete</button>'+
+          '</div>'+
+        '</div>';
+      grid.appendChild(card);
+    });
+    renderPublicBlog(posts);
+  } catch(e){ grid.innerHTML='<div style="color:#ff6b6b;font-size:13px;">Failed to load blogs: '+e.message+'</div>'; }
+}
+
+function escHtml(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+function renderPublicBlog(posts){
+  var sec = document.getElementById("blog");
+  var grid = document.getElementById("blog-grid");
+  if(!posts || posts.length===0){ sec.style.display="none"; return; }
+  sec.style.display="";
+  var navBlog = document.getElementById("nav-blog-li"); if(navBlog) navBlog.style.display="";
+  grid.innerHTML="";
+  posts.forEach(function(p){
+    var card = document.createElement("div"); card.className="blog-card";
+    var date = p.createdAt ? new Date(p.createdAt).toLocaleDateString("en-US",{year:"numeric",month:"short",day:"numeric"}) : "";
+    card.innerHTML=
+      '<div class="blog-date">'+escHtml(date)+'</div>'+
+      '<div class="blog-title">'+escHtml(p.title||"Untitled")+'</div>'+
+      '<div class="blog-excerpt">'+escHtml(p.excerpt||"")+'</div>'+
+      (p.tag?'<div class="blog-tag">'+escHtml(p.tag)+'</div>':'');
+    grid.appendChild(card);
+  });
+}
+
+var _editingBlogId = null;
+window.addBlogPost = function(){
+  _editingBlogId = null;
+  openBlogModal("","","");
+};
+window.editBlogPost = async function(id){
+  _editingBlogId = id;
+  await waitForFB();
+  var s = await window._fs.getDoc(window._fs.doc(window._db,"blogs",id));
+  if(s.exists()){ var d=s.data(); openBlogModal(d.title||"",d.excerpt||"",d.tag||""); }
+};
+window.deleteBlogPost = async function(id, title){
+  if(!confirm("Delete \""+title+"\"?")) return;
+  await waitForFB();
+  await window._fs.deleteDoc(window._fs.doc(window._db,"blogs",id));
+  await writeLog("delete","Deleted blog post: "+title);
+  await renderAdminBlog();
+  toast("Deleted");
+};
+
+function openBlogModal(title, excerpt, tag){
+  var m = document.getElementById("blog-modal");
+  document.getElementById("bm-title").value   = title;
+  document.getElementById("bm-excerpt").value = excerpt;
+  document.getElementById("bm-tag").value     = tag;
+  m.classList.add("open");
+}
+window.closeBlogModal = function(){ document.getElementById("blog-modal").classList.remove("open"); };
+window.saveBlogPost = async function(){
+  var title   = (document.getElementById("bm-title").value||"").trim();
+  var excerpt = (document.getElementById("bm-excerpt").value||"").trim();
+  var tag     = (document.getElementById("bm-tag").value||"").trim();
+  if(!title){ toast("Title is required"); return; }
+  await waitForFB();
+  var data = {title, excerpt, tag, createdAt: _editingBlogId ? undefined : Date.now()};
+  if(!_editingBlogId) {
+    await window._fs.addDoc(window._fs.collection(window._db,"blogs"), data);
+    await writeLog("add","Added blog post: "+title);
+  } else {
+    delete data.createdAt;
+    await window._fs.setDoc(window._fs.doc(window._db,"blogs",_editingBlogId), data, {merge:true});
+    await writeLog("edit","Updated blog post: "+title);
+  }
+  window.closeBlogModal();
+  await renderAdminBlog();
+  toast(_editingBlogId?"Updated!":"Published!");
+};
+
+/* Load about text on public site startup */
+function loadPublicAbout(){
+  waitForFB().then(function(){
+    window._fs.getDoc(window._fs.doc(window._db,"settings","about"))
+      .then(function(s){
+        if(!s.exists()) return;
+        var d = s.data();
+        var lt = document.getElementById("about-label-text"); if(lt && d.label) lt.textContent = d.label;
+        var bt = document.getElementById("about-body-text");  if(bt && d.body)  bt.textContent = d.body;
+      }).catch(function(){});
+  });
+}
+
+/* Load blogs on public site startup */
+function loadPublicBlog(){
+  waitForFB().then(function(){
+    window._fs.getDocs(window._fs.collection(window._db,"blogs"))
+      .then(function(snap){
+        if(snap.empty) return;
+        var posts = snap.docs.map(function(d){ return Object.assign({id:d.id},d.data()); })
+          .sort(function(a,b){ return (b.createdAt||0)-(a.createdAt||0); });
+        renderPublicBlog(posts);
+      }).catch(function(){});
+  });
+}
 
 /* ─────────────────────────────────────────
    ADMIN — SERVICE VIDEOS
@@ -1203,45 +1502,58 @@ window.saveProfileUrl=async function(){
 async function renderAdminServices(){
   var vids=await getSvcVideos();
   var grid=document.getElementById("admin-svc-grid"); grid.innerHTML="";
+
   SVC_SLOTS.forEach(function(s){
     var card=document.createElement("div"); card.className="admin-card";
+    if(s.static) card.style.opacity="0.55";
+
     /* preview */
     var prev=document.createElement("div"); prev.className="admin-preview";
-    if(vids[s.id]){ var vv=document.createElement("video"); vv.src=vids[s.id]; vv.muted=vv.loop=true; vv.autoplay=true; vv.setAttribute("playsinline",""); prev.appendChild(vv); }
-    else { prev.innerHTML='<div class="no-vid">No video yet</div>'; }
+    if(vids[s.id]){ var vv=document.createElement("video"); vv.src=vids[s.id]; vv.muted=true; vv.loop=true; vv.autoplay=true; vv.setAttribute("playsinline",""); prev.appendChild(vv); }
+    else { prev.innerHTML='<div class="no-vid">'+(s.static?'Static label card':'No video yet')+'</div>'; }
     card.appendChild(prev);
 
     var body=document.createElement("div"); body.className="admin-pad";
-    var lbl=document.createElement("div"); lbl.className="admin-lbl"; lbl.textContent=s.label; body.appendChild(lbl);
 
-    /* progress bar */
-    var wrapId="sw-"+s.id, fillId="sf-"+s.id;
-    var prog=document.createElement("div"); prog.className="upbar-wrap"; prog.id=wrapId;
-    prog.innerHTML='<div class="upbar-label">Uploading…</div><div class="upbar"><div class="upbar-fill" id="'+fillId+'"></div></div>';
-    body.appendChild(prog);
+    /* label row */
+    var lbl=document.createElement("div"); lbl.className="admin-lbl";
+    lbl.innerHTML=s.label+(s.static?' <span style="font-size:10px;color:rgba(208,208,208,0.25);font-weight:400;text-transform:none;letter-spacing:0;">· label only</span>':'');
+    body.appendChild(lbl);
 
-    /* upload / url buttons */
-    var ubRow=document.createElement("div"); ubRow.className="upload-btn-row";
-    var ub=document.createElement("button"); ub.className="a-upload-big"; ub.textContent="⬆ Upload Video";
-    var fi=document.createElement("input"); fi.className="hf"; fi.id="sfi-"+s.id; fi.type="file"; fi.accept="video/*";
-    (function(sid,finp,wi,fi2){ ub.onclick=function(){finp.click();}; finp.onchange=function(){handleSvcUpload(sid,finp,wi,fi2);}; })(s.id,fi,wrapId,fillId);
-    var urlBtn=document.createElement("button"); urlBtn.className="a-upload-url"; urlBtn.textContent="URL";
-    var urlRowId="sur-"+s.id;
-    urlBtn.onclick=(function(rid){ return function(){ toggleUrlRow(rid); }; })(urlRowId);
-    ubRow.appendChild(ub); ubRow.appendChild(urlBtn); ubRow.appendChild(fi); body.appendChild(ubRow);
+    if(s.static){
+      /* Static card — no upload controls, just info */
+      var info=document.createElement("div");
+      info.style.cssText="font-size:11px;color:rgba(208,208,208,0.25);padding:6px 0;";
+      info.textContent="This card shows a label only — not editable.";
+      body.appendChild(info);
+    } else {
+      /* Editable card — upload + URL controls */
+      var wrapId="sw-"+s.id, fillId="sf-"+s.id;
+      var prog=document.createElement("div"); prog.className="upbar-wrap"; prog.id=wrapId;
+      prog.innerHTML='<div class="upbar-label">Uploading…</div><div class="upbar"><div class="upbar-fill" id="'+fillId+'"></div></div>';
+      body.appendChild(prog);
 
-    /* url row */
-    var urlRow=document.createElement("div"); urlRow.className="url-row"; urlRow.id=urlRowId;
-    var urlInp=document.createElement("input"); urlInp.className="a-inp"; urlInp.id="sv-"+s.id; urlInp.type="text"; urlInp.placeholder="https://..."; urlInp.style.margin="0"; urlInp.value=vids[s.id]||"";
-    var saveUrlBtn=document.createElement("button"); saveUrlBtn.className="btn-save"; saveUrlBtn.style="flex:0 0 auto;padding:7px 14px;"; saveUrlBtn.textContent="Save";
-    (function(sid){ saveUrlBtn.onclick=function(){ saveSvcUrl(sid); }; })(s.id);
-    urlRow.appendChild(urlInp); urlRow.appendChild(saveUrlBtn);
-    body.appendChild(urlRow);
+      var ubRow=document.createElement("div"); ubRow.className="upload-btn-row";
+      var ub=document.createElement("button"); ub.className="a-upload-big"; ub.textContent="⬆ Upload Video";
+      var fi=document.createElement("input"); fi.className="hf"; fi.id="sfi-"+s.id; fi.type="file"; fi.accept="video/*";
+      (function(sid,finp,wi,fi2){ ub.onclick=function(){finp.click();}; finp.onchange=function(){handleSvcUpload(sid,finp,wi,fi2);}; })(s.id,fi,wrapId,fillId);
+      var urlBtn=document.createElement("button"); urlBtn.className="a-upload-url"; urlBtn.textContent="URL";
+      var urlRowId="sur-"+s.id;
+      urlBtn.onclick=(function(rid){ return function(){ toggleUrlRow(rid); }; })(urlRowId);
+      ubRow.appendChild(ub); ubRow.appendChild(urlBtn); ubRow.appendChild(fi); body.appendChild(ubRow);
 
-    if(vids[s.id]){
-      var delBtn=document.createElement("button"); delBtn.className="btn-del"; delBtn.style="width:100%;margin-top:6px;"; delBtn.textContent="Clear Video";
-      (function(sid){ delBtn.onclick=function(){ clearSvc(sid); }; })(s.id);
-      body.appendChild(delBtn);
+      var urlRow=document.createElement("div"); urlRow.className="url-row"; urlRow.id=urlRowId;
+      var urlInp=document.createElement("input"); urlInp.className="a-inp"; urlInp.id="sv-"+s.id; urlInp.type="text"; urlInp.placeholder="https://..."; urlInp.style.margin="0"; urlInp.value=vids[s.id]||"";
+      var saveUrlBtn=document.createElement("button"); saveUrlBtn.className="btn-save"; saveUrlBtn.style="flex:0 0 auto;padding:7px 14px;"; saveUrlBtn.textContent="Save";
+      (function(sid){ saveUrlBtn.onclick=function(){ saveSvcUrl(sid); }; })(s.id);
+      urlRow.appendChild(urlInp); urlRow.appendChild(saveUrlBtn);
+      body.appendChild(urlRow);
+
+      if(vids[s.id]){
+        var delBtn=document.createElement("button"); delBtn.className="btn-del"; delBtn.style="width:100%;margin-top:6px;"; delBtn.textContent="Clear Video";
+        (function(sid){ delBtn.onclick=function(){ clearSvc(sid); }; })(s.id);
+        body.appendChild(delBtn);
+      }
     }
     card.appendChild(body); grid.appendChild(card);
   });
@@ -1336,8 +1648,9 @@ async function handleProjUpload(i,inp,wrapId,fillId,pid){
   var projects=await getProjects();
   var url=await uploadWithProgress("projects/"+pid+"_"+Date.now(), file, fillId, wrapId);
   projects[i].videoSrc=url;
+  await waitForFB();
   await window._fs.setDoc(window._fs.doc(window._db,"projects",String(pid)), projects[i]);
-  await Promise.all([renderProjects(), renderAdminProjects()]);
+  getProjects().then(function(p){ _buildProjectsGrid(p, _cachedProfileSrc); }); await renderAdminProjects();
   await writeLog("edit","Uploaded video for project: "+projects[i].title);
   toast("Uploaded & saved!");
 }
@@ -1346,8 +1659,9 @@ async function saveProjUrl(i,pid){
   var url=(document.getElementById("pv-"+i)||{}).value||""; url=url.trim();
   if(!url){ toast("Paste a URL first"); return; }
   var projects=await getProjects(); projects[i].videoSrc=url;
+  await waitForFB();
   await window._fs.setDoc(window._fs.doc(window._db,"projects",String(pid)), projects[i]);
-  await Promise.all([renderProjects(), renderAdminProjects()]);
+  getProjects().then(function(p){ _buildProjectsGrid(p, _cachedProfileSrc); }); await renderAdminProjects();
   await writeLog("edit","Updated video URL for project: "+projects[i].title);
   toast("Saved!");
 }
@@ -1357,8 +1671,9 @@ async function saveProjInfo(i,pid){
   projects[i].tag   = document.getElementById("pt-"+i).value.trim();
   projects[i].title = document.getElementById("pti-"+i).value.trim();
   projects[i].desc  = document.getElementById("pd-"+i).value.trim();
+  await waitForFB();
   await window._fs.setDoc(window._fs.doc(window._db,"projects",String(pid)), projects[i]);
-  await Promise.all([renderProjects(), renderAdminProjects()]);
+  getProjects().then(function(p){ _buildProjectsGrid(p, _cachedProfileSrc); }); await renderAdminProjects();
   await writeLog("edit","Edited project info: "+projects[i].title);
   toast("Saved!");
 }
@@ -1367,8 +1682,9 @@ async function deleteProjItem(pid){
   if(!confirm("Delete this project?")) return;
   var projects=await getProjects();
   var p=projects.find(function(x){return x.id==pid;});
+  await waitForFB();
   await window._fs.deleteDoc(window._fs.doc(window._db,"projects",String(pid)));
-  await Promise.all([renderProjects(), renderAdminProjects()]);
+  getProjects().then(function(p){ _buildProjectsGrid(p, _cachedProfileSrc); }); await renderAdminProjects();
   await writeLog("delete","Deleted project: "+(p?p.title:pid));
   toast("Deleted");
 }
@@ -1376,8 +1692,9 @@ async function deleteProjItem(pid){
 async function addProjItem(){
   var cols=["v1","v2","v3"]; var projects=await getProjects();
   var newP={tag:"New",title:"Project Title",desc:"Description",videoSrc:"",colorClass:cols[projects.length%3],order:projects.length};
+  await waitForFB();
   await window._fs.addDoc(window._fs.collection(window._db,"projects"),newP);
-  await Promise.all([renderProjects(), renderAdminProjects()]);
+  getProjects().then(function(p){ _buildProjectsGrid(p, _cachedProfileSrc); }); await renderAdminProjects();
   await writeLog("add","Added new project");
   toast("Added");
 }
@@ -1400,15 +1717,17 @@ window.switchTab=async function(tab){
 /* ─────────────────────────────────────────
    ADMIN LOGIN
 ───────────────────────────────────────── */
-window.openAdmin=async function(){
+window.openAdmin=function(){
   document.getElementById("admin-panel").classList.add("open");
   var who = document.getElementById("admin-who");
   if(who) who.textContent = currentUser ? (currentUser.name + (currentUser.username===OWNER.username?' 👑':'')) : "Admin";
   applyPermissionLocks();
   var isOwner = currentUser && currentUser.username===OWNER.username;
-  await initProfileAdmin();
-  if(isOwner||can('svcVideos')) await renderAdminServices();
-  if(isOwner||can('projects'))  await renderAdminProjects();
+  initProfileAdmin();
+  initAboutAdmin();
+  renderAdminBlog();
+  if(isOwner||can('svcVideos')) renderAdminServices();
+  if(isOwner||can('projects'))  renderAdminProjects();
 };
 window.logout=function(){ document.getElementById("admin-panel").classList.remove("open"); currentUser=null; toast("Logged out"); };
 window.viewSite=function(){ document.getElementById("admin-panel").classList.remove("open"); };
@@ -1432,6 +1751,7 @@ window.doLogin=async function(){
 
   /* check team in Firestore — include permissions */
   try {
+    await waitForFB();
     var snap=await window._fs.getDocs(window._fs.collection(window._db,"team"));
     var found=null;
     snap.docs.forEach(function(d){
@@ -1487,13 +1807,16 @@ window.sendContactEmail=function(){
 /* ─────────────────────────────────────────
    INIT
 ───────────────────────────────────────── */
-async function init(){
-  await Promise.all([applySvcVideos(), renderProjects()]);
+function init(){
+  renderProjects();   // instant defaults → swaps Firebase data in background
+  applySvcVideos();   // waits for Firebase internally
+  loadPublicAbout();  // loads About Us text from Firebase
+  loadPublicBlog();   // loads Blog posts from Firebase
   trackPageVisit();
   setupSectionTracking();
   revealNow();
 }
-if(window._fbReady){ init(); } else { window.addEventListener("fbReady",init); }
+init();
 </script>
 </body>
 </html>
