@@ -6,10 +6,9 @@
 <title>SaaS.motion</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-<!-- ═══ FIREBASE SDK ═══ -->
+<!-- ═══ FIREBASE SDK (Firestore only — media stored on Cloudinary) ═══ -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
 <script>
 (function(){
   function initFB(){
@@ -25,10 +24,8 @@
           appId:             "1:652419108150:web:91111f3930608867cf7797"
         });
       }
-      var db   = firebase.firestore();
-      var stor = firebase.storage();
-      window._db   = db;
-      window._stor = stor;
+      var db = firebase.firestore();
+      window._db = db;
 
       function normSnap(snap){
         if(!snap) return snap;
@@ -60,23 +57,30 @@
     } catch(e){ console.error("Firebase init error:", e); return false; }
   }
 
-  /* Try immediately */
   if(!initFB()){
-    /* CDN scripts haven't loaded yet — load from unpkg as fallback */
-    var base = "https://unpkg.com/firebase@9.23.0/";
-    var scripts = ["firebase-app-compat.js","firebase-firestore-compat.js","firebase-storage-compat.js"];
+    var scripts = [
+      "https://unpkg.com/firebase@9.23.0/firebase-app-compat.js",
+      "https://unpkg.com/firebase@9.23.0/firebase-firestore-compat.js"
+    ];
     var loaded = 0;
-    scripts.forEach(function(s){
+    scripts.forEach(function(src){
       var el = document.createElement("script");
-      el.src = base + s;
-      el.onload = function(){
-        loaded++;
-        if(loaded === scripts.length) initFB();
-      };
+      el.src = src;
+      el.onload = function(){ if(++loaded === scripts.length) initFB(); };
       document.head.appendChild(el);
     });
   }
 })();
+</script>
+
+<!-- ═══ CLOUDINARY CONFIG ═══ -->
+<script>
+  window._CLD = {
+    cloudName:   "dkpoynvku",
+    uploadPreset:"saasmotion_uploads"  /* Create this in Cloudinary Dashboard:
+                                          Settings → Upload → Upload Presets → Add preset
+                                          Set signing mode = Unsigned, name = saasmotion_uploads */
+  };
 </script>
 
 <style>
@@ -1015,10 +1019,9 @@ function waitForFB(){
   });
 }
 
-/* Guard: returns true if Firebase is available, false+logs if not */
+/* Guard: returns true if Firebase is available */
 function fbOk(){
-  if(window._fs && window._db) return true;
-  console.warn("Firebase not ready"); return false;
+  return !!(window._fs && window._db);
 }
 
 /* Also patch writeLog to wait */
@@ -1080,24 +1083,53 @@ async function getProjects(){
 /* ─────────────────────────────────────────
    STORAGE UPLOAD with REAL PROGRESS BAR
 ───────────────────────────────────────── */
-function uploadWithProgress(path, file, fillId, wrapId){
+/* ─────────────────────────────────────────
+   CLOUDINARY UPLOAD with REAL PROGRESS BAR
+   Uploads to Cloudinary, returns secure URL.
+   Uses unsigned upload preset — no backend needed.
+───────────────────────────────────────── */
+function uploadWithProgress(folder, file, fillId, wrapId){
   return new Promise(function(resolve, reject){
     var wrap = document.getElementById(wrapId);
     var fill = document.getElementById(fillId);
     if(wrap) wrap.classList.add("show");
-    var storageRef = window._stor.ref(path);
-    var task = storageRef.put(file);
-    task.on("state_changed",
-      function(snap){ var pct=Math.round(snap.bytesTransferred/snap.totalBytes*100); if(fill) fill.style.width=pct+"%"; },
-      function(err){ if(wrap) wrap.classList.remove("show"); reject(err); },
-      function(){
-        task.snapshot.ref.getDownloadURL().then(function(url){
-          if(wrap) wrap.classList.remove("show");
-          if(fill) fill.style.width="0%";
-          resolve(url);
-        }).catch(reject);
+    if(fill) fill.style.width = "0%";
+
+    var fd = new FormData();
+    fd.append("file", file);
+    fd.append("upload_preset", window._CLD.uploadPreset);
+    fd.append("folder", "saasmotion/" + folder);
+    /* Ask Cloudinary to auto-optimize quality */
+    fd.append("quality", "auto");
+    fd.append("fetch_format", "auto");
+
+    var xhr = new XMLHttpRequest();
+    var resourceType = file.type.startsWith("image/") ? "image" : "video";
+    xhr.open("POST", "https://api.cloudinary.com/v1_1/" + window._CLD.cloudName + "/" + resourceType + "/upload");
+
+    xhr.upload.onprogress = function(e){
+      if(e.lengthComputable && fill){
+        fill.style.width = Math.round(e.loaded / e.total * 100) + "%";
       }
-    );
+    };
+
+    xhr.onload = function(){
+      if(wrap) wrap.classList.remove("show");
+      if(fill) fill.style.width = "0%";
+      if(xhr.status === 200){
+        var res = JSON.parse(xhr.responseText);
+        resolve(res.secure_url);
+      } else {
+        reject(new Error("Upload failed: " + xhr.statusText));
+      }
+    };
+
+    xhr.onerror = function(){
+      if(wrap) wrap.classList.remove("show");
+      reject(new Error("Network error during upload"));
+    };
+
+    xhr.send(fd);
   });
 }
 
@@ -1384,7 +1416,7 @@ async function initProfileAdmin(){
 }
 window.handleProfileFile=async function(inp){
   var file=inp.files[0]; if(!file) return;
-  var url=await uploadWithProgress("profile/avatar_"+Date.now(), file, "profile-upbar-fill", "profile-upbar");
+  var url=await uploadWithProgress("profile", file, "profile-upbar-fill", "profile-upbar");
   await saveProfileSrc(url);
   _cachedProfileSrc = url;
   document.getElementById("profile-preview").innerHTML='<img src="'+url+'" style="width:100%;height:100%;object-fit:cover;">';
@@ -1631,7 +1663,7 @@ async function renderAdminServices(){
 
 async function handleSvcUpload(id,inp,wrapId,fillId){
   var file=inp.files[0]; if(!file) return;
-  var url=await uploadWithProgress("svc/"+id+"_"+Date.now(), file, fillId, wrapId);
+  var url=await uploadWithProgress("services", file, fillId, wrapId);
   var vids=await getSvcVideos(); vids[id]=url;
   await saveSvcVideos(vids);
   await applySvcVideos();
@@ -1716,7 +1748,7 @@ async function renderAdminProjects(){
 async function handleProjUpload(i,inp,wrapId,fillId,pid){
   var file=inp.files[0]; if(!file) return;
   var projects=await getProjects();
-  var url=await uploadWithProgress("projects/"+pid+"_"+Date.now(), file, fillId, wrapId);
+  var url=await uploadWithProgress("projects", file, fillId, wrapId);
   projects[i].videoSrc=url;
   await waitForFB();
   await window._fs.setDoc(window._fs.doc(window._db,"projects",String(pid)), projects[i]);
