@@ -7,33 +7,76 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
 <!-- ═══ FIREBASE SDK ═══ -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, doc, setDoc, getDoc, collection, getDocs,
-           addDoc, deleteDoc, query, orderBy, serverTimestamp, limit, increment, updateDoc }
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-  import { getStorage, ref, uploadBytesResumable, getDownloadURL }
-    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<script>
+(function(){
+  function initFB(){
+    if(typeof firebase === "undefined") return false;
+    try {
+      if(!firebase.apps.length){
+        firebase.initializeApp({
+          apiKey:            "AIzaSyDPG-gdZY1naaRgmzJhsyiN1esrxz7jTV8",
+          authDomain:        "saasmotion-658a7.firebaseapp.com",
+          projectId:         "saasmotion-658a7",
+          storageBucket:     "saasmotion-658a7.firebasestorage.app",
+          messagingSenderId: "652419108150",
+          appId:             "1:652419108150:web:91111f3930608867cf7797"
+        });
+      }
+      var db   = firebase.firestore();
+      var stor = firebase.storage();
+      window._db   = db;
+      window._stor = stor;
 
-  const firebaseConfig = {
-    apiKey:            "AIzaSyDPG-gdZY1naaRgmzJhsyiN1esrxz7jTV8",
-    authDomain:        "saasmotion-658a7.firebaseapp.com",
-    projectId:         "saasmotion-658a7",
-    storageBucket:     "saasmotion-658a7.firebasestorage.app",
-    messagingSenderId: "652419108150",
-    appId:             "1:652419108150:web:91111f3930608867cf7797",
-    measurementId:     "G-TWY1H2Q8NC"
-  };
-  const app  = initializeApp(firebaseConfig);
-  const db   = getFirestore(app);
-  const stor = getStorage(app);
-  window._db  = db;
-  window._stor = stor;
-  window._fs  = { doc, setDoc, getDoc, collection, getDocs, addDoc, deleteDoc,
-                  query, orderBy, serverTimestamp, limit, increment, updateDoc };
-  window._sr  = { ref, uploadBytesResumable, getDownloadURL };
-  window._fbReady = true;
-  window.dispatchEvent(new Event("fbReady"));
+      function normSnap(snap){
+        if(!snap) return snap;
+        if(typeof snap.exists === "boolean"){
+          var e = snap.exists;
+          snap.exists = function(){ return e; };
+        }
+        return snap;
+      }
+
+      window._fs = {
+        doc:      function(db,col,id){ return db.collection(col).doc(id); },
+        collection: function(db,col){ return db.collection(col); },
+        getDoc:   function(ref){ return ref.get().then(normSnap); },
+        getDocs:  function(ref){ return ref.get().then(normSnap); },
+        setDoc:   function(ref,data,opts){ return (opts&&opts.merge)?ref.set(data,{merge:true}):ref.set(data); },
+        addDoc:   function(ref,data){ return ref.add(data); },
+        deleteDoc:function(ref){ return ref.delete(); },
+        updateDoc:function(ref,data){ return ref.update(data); },
+        query:    function(ref){ return ref; },
+        orderBy:  function(){ return null; },
+        limit:    function(){ return null; },
+        serverTimestamp: function(){ return firebase.firestore.FieldValue.serverTimestamp(); },
+        increment:function(n){ return firebase.firestore.FieldValue.increment(n); }
+      };
+      window._fbReady = true;
+      window.dispatchEvent(new Event("fbReady"));
+      return true;
+    } catch(e){ console.error("Firebase init error:", e); return false; }
+  }
+
+  /* Try immediately */
+  if(!initFB()){
+    /* CDN scripts haven't loaded yet — load from unpkg as fallback */
+    var base = "https://unpkg.com/firebase@9.23.0/";
+    var scripts = ["firebase-app-compat.js","firebase-firestore-compat.js","firebase-storage-compat.js"];
+    var loaded = 0;
+    scripts.forEach(function(s){
+      var el = document.createElement("script");
+      el.src = base + s;
+      el.onload = function(){
+        loaded++;
+        if(loaded === scripts.length) initFB();
+      };
+      document.head.appendChild(el);
+    });
+  }
+})();
 </script>
 
 <style>
@@ -795,6 +838,7 @@ function permSummary(p){
 async function writeLog(action, detail){
   try {
     await waitForFB();
+    if(!fbOk()) return;
     await window._fs.addDoc(window._fs.collection(window._db,"auditLog"),{
       who: currentUser ? currentUser.name : "Unknown",
       action: action,
@@ -809,18 +853,24 @@ async function loadAuditLog(){
   el.innerHTML = '<div class="fb-loading">Loading…</div>';
   try {
     await waitForFB();
-    var q    = window._fs.query(window._fs.collection(window._db,"auditLog"), window._fs.orderBy("ts","desc"), window._fs.limit(60));
-    var snap = await window._fs.getDocs(q);
+    if(!fbOk()){ el.innerHTML='<div style="color:#ff6b6b;font-size:13px;">Firebase not connected.</div>'; return; }
+    /* No orderBy — avoids needing a Firestore index. Sort client-side instead. */
+    var snap = await window._fs.getDocs(window._fs.collection(window._db,"auditLog"));
     if(snap.empty){ el.innerHTML='<div style="color:rgba(208,208,208,0.3);font-size:13px;padding:20px 0;">No activity yet.</div>'; return; }
+    var docs = snap.docs.map(function(d){ return d.data(); })
+      .sort(function(a,b){
+        var at = a.ts && a.ts.seconds ? a.ts.seconds : 0;
+        var bt = b.ts && b.ts.seconds ? b.ts.seconds : 0;
+        return bt - at;
+      }).slice(0,60);
     el.innerHTML="";
-    snap.docs.forEach(function(d){
-      var data = d.data();
+    docs.forEach(function(data){
       var dot  = data.action==="delete" ? "del" : data.action==="add" ? "add" : "";
       var row  = document.createElement("div"); row.className="log-entry";
-      row.innerHTML = '<div class="log-dot '+dot+'"></div><div class="log-text"><strong>'+data.who+'</strong> '+data.action+' — '+data.detail+'</div><div class="log-time">'+fmtTime(data.ts)+'</div>';
+      row.innerHTML = '<div class="log-dot '+dot+'"></div><div class="log-text"><strong>'+(data.who||"?")+'</strong> '+(data.action||"")+(data.detail?' — '+data.detail:'')+'</div><div class="log-time">'+fmtTime(data.ts)+'</div>';
       el.appendChild(row);
     });
-  } catch(e){ el.innerHTML='<div style="color:#ff6b6b;font-size:13px;">Failed to load log. Create index: Firebase Console → Firestore → Indexes → collection: auditLog, field: ts Descending.</div>'; }
+  } catch(e){ el.innerHTML='<div style="color:#ff6b6b;font-size:13px;">Error loading log: '+e.message+'</div>'; }
 }
 
 /* ─────────────────────────────────────────
@@ -831,6 +881,7 @@ async function loadTeamMembers(){
   var el = document.getElementById("team-list"); el.innerHTML='<div class="fb-loading">Loading…</div>';
   try {
     await waitForFB();
+    if(!fbOk()){ el.innerHTML='<div style="color:#ff6b6b;font-size:13px;">Firebase not connected.</div>'; return; }
     var snap = await window._fs.getDocs(window._fs.collection(window._db,"team"));
     el.innerHTML="";
 
@@ -955,9 +1006,19 @@ window.deleteTeamMember = async function(id, name){
 ───────────────────────────────────────── */
 function waitForFB(){
   return new Promise(function(resolve){
-    if(window._fbReady && window._db){ resolve(); return; }
-    window.addEventListener("fbReady",function(){ resolve(); },{once:true});
+    if(window._fbReady && window._db && window._fs){ resolve(); return; }
+    var done = false;
+    var timer = setTimeout(function(){ if(!done){ done=true; resolve(); } }, 5000);
+    window.addEventListener("fbReady",function(){
+      if(!done){ done=true; clearTimeout(timer); resolve(); }
+    },{once:true});
   });
+}
+
+/* Guard: returns true if Firebase is available, false+logs if not */
+function fbOk(){
+  if(window._fs && window._db) return true;
+  console.warn("Firebase not ready"); return false;
 }
 
 /* Also patch writeLog to wait */
@@ -968,18 +1029,22 @@ var _origWriteLog = null; // defined later — patched after declaration
 ───────────────────────────────────────── */
 async function getSvcVideos(){
   await waitForFB();
+  if(!fbOk()) return {};
   try{ var s=await window._fs.getDoc(window._fs.doc(window._db,"settings","svcVideos")); return s.exists()?s.data():{}; }catch(e){ return {}; }
 }
 async function saveSvcVideos(data){
   await waitForFB();
+  if(!fbOk()) return;
   await window._fs.setDoc(window._fs.doc(window._db,"settings","svcVideos"),data);
 }
 async function getProfileSrc(){
   await waitForFB();
+  if(!fbOk()) return "";
   try{ var s=await window._fs.getDoc(window._fs.doc(window._db,"settings","profile")); return s.exists()?(s.data().src||""):""; }catch(e){ return ""; }
 }
 async function saveProfileSrc(url){
   await waitForFB();
+  if(!fbOk()) return;
   await window._fs.setDoc(window._fs.doc(window._db,"settings","profile"),{src:url});
 }
 
@@ -1003,6 +1068,7 @@ var DEFAULT_PROJECTS=[
 
 async function getProjects(){
   await waitForFB();
+  if(!fbOk()) return DEFAULT_PROJECTS;
   try{
     var s=await window._fs.getDocs(window._fs.collection(window._db,"projects"));
     if(s.empty) return DEFAULT_PROJECTS;
@@ -1019,16 +1085,17 @@ function uploadWithProgress(path, file, fillId, wrapId){
     var wrap = document.getElementById(wrapId);
     var fill = document.getElementById(fillId);
     if(wrap) wrap.classList.add("show");
-    var storageRef = window._sr.ref(window._stor, path);
-    var task = window._sr.uploadBytesResumable(storageRef, file);
+    var storageRef = window._stor.ref(path);
+    var task = storageRef.put(file);
     task.on("state_changed",
       function(snap){ var pct=Math.round(snap.bytesTransferred/snap.totalBytes*100); if(fill) fill.style.width=pct+"%"; },
-      function(err){ reject(err); },
-      async function(){
-        var url = await window._sr.getDownloadURL(task.snapshot.ref);
-        if(wrap) wrap.classList.remove("show");
-        if(fill) fill.style.width="0%";
-        resolve(url);
+      function(err){ if(wrap) wrap.classList.remove("show"); reject(err); },
+      function(){
+        task.snapshot.ref.getDownloadURL().then(function(url){
+          if(wrap) wrap.classList.remove("show");
+          if(fill) fill.style.width="0%";
+          resolve(url);
+        }).catch(reject);
       }
     );
   });
@@ -1114,6 +1181,8 @@ async function loadAnalytics(){
   statsEl.innerHTML='<div class="fb-loading" style="grid-column:1/-1;">Loading…</div>';
 
   try {
+    await waitForFB();
+    if(!fbOk()){ statsEl.innerHTML='<div style="color:#ff6b6b;grid-column:1/-1;">Firebase not connected.</div>'; return; }
     /* collect last 7 days — fetch ALL in parallel */
     var dayMeta=[];
     for(var i=6;i>=0;i--){
@@ -1339,20 +1408,20 @@ window.saveProfileUrl=async function(){
    ADMIN — ABOUT US
 ───────────────────────────────────────── */
 async function initAboutAdmin(){
+  /* Pre-fill with current site text immediately (no Firebase needed) */
+  var li0=document.getElementById("about-label-inp"); if(li0) li0.value="About Us";
+  var bi0=document.getElementById("about-body-inp");
+  if(bi0){ var bt0=document.getElementById("about-body-text"); if(bt0) bi0.value=bt0.textContent; }
   try {
     await waitForFB();
+    if(!fbOk()) return;
     var s = await window._fs.getDoc(window._fs.doc(window._db,"settings","about"));
     if(s.exists()){
       var d = s.data();
       var li = document.getElementById("about-label-inp"); if(li) li.value = d.label||"About Us";
       var bi = document.getElementById("about-body-inp");  if(bi) bi.value = d.body||"";
-      /* also update live site text */
       var lt = document.getElementById("about-label-text"); if(lt && d.label) lt.textContent = d.label;
       var bt = document.getElementById("about-body-text");  if(bt && d.body)  bt.textContent = d.body;
-    } else {
-      /* pre-fill with current hardcoded text */
-      var li2=document.getElementById("about-label-inp"); if(li2) li2.value="About Us";
-      var bi2=document.getElementById("about-body-inp"); if(bi2) bi2.value=document.getElementById("about-body-text").textContent;
     }
   } catch(e){}
 }
@@ -1376,6 +1445,7 @@ async function renderAdminBlog(){
   var grid = document.getElementById("admin-blog-grid");
   grid.innerHTML = '<div class="fb-loading">Loading…</div>';
   await waitForFB();
+  if(!fbOk()){ grid.innerHTML='<div style="color:#ff6b6b;font-size:13px;">Firebase not connected.</div>'; return; }
   try {
     var snap = await window._fs.getDocs(window._fs.collection(window._db,"blogs"));
     grid.innerHTML = "";
@@ -1744,14 +1814,15 @@ window.doLogin=async function(){
   if(u===OWNER.username && p===OWNER.password){
     currentUser={username:OWNER.username, name:OWNER.name, role:OWNER.role, permissions:PRESETS.owner};
     window.closeLogin();
-    await writeLog("login","Sahal (Superadmin) logged in");
-    window.openAdmin();
+    window.openAdmin(); // open immediately — don't wait for Firebase
+    writeLog("login","Sahal (Superadmin) logged in"); // fire & forget
     return;
   }
 
-  /* check team in Firestore — include permissions */
+  /* check team in Firestore */
   try {
-    await waitForFB();
+    var fbTimeout = new Promise(function(_,reject){ setTimeout(function(){ reject(new Error("timeout")); }, 4000); });
+    await Promise.race([waitForFB(), fbTimeout]);
     var snap=await window._fs.getDocs(window._fs.collection(window._db,"team"));
     var found=null;
     snap.docs.forEach(function(d){
@@ -1761,8 +1832,8 @@ window.doLogin=async function(){
     if(found){
       currentUser={username:found.username, name:found.name, role:found.role, permissions:found.permissions||PRESETS.editor};
       window.closeLogin();
-      await writeLog("login",found.name+" logged in");
-      window.openAdmin();
+      window.openAdmin(); // open immediately
+      writeLog("login",found.name+" logged in"); // fire & forget
       return;
     }
   } catch(e){}
